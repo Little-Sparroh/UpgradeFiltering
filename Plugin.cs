@@ -12,7 +12,7 @@ public class SparrohPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "sparroh.upgradefiltering";
     public const string PluginName = "UpgradeFiltering";
-    public const string PluginVersion = "1.0.0";
+    public const string PluginVersion = "1.1.0";
 
     private ConfigEntry<bool> EnableStatReformat;
     internal static ManualLogSource Logger;
