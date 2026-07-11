@@ -25,7 +25,7 @@ public static class SortHandlingMod
     }
 }
 
-public static class UpgradeSortingPlugin
+public static class UpgradeFilteringPlugin
 {
     internal static FilterPanelUI FilterPanel;
 
@@ -149,7 +149,7 @@ public static class UpgradeSortingPlugin
                     new { Name = "Oddity", Rarity = Rarity.Oddity }
                 };
 
-                UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Clear();
+                UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Clear();
 
                 foreach (var rarity in rarities)
                 {
@@ -201,14 +201,14 @@ public static class UpgradeSortingPlugin
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(() =>
                     {
-                        if (UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Contains(rarity))
+                        if (UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Contains(rarity))
                         {
-                            UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Remove(rarity);
+                            UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Remove(rarity);
                             buttonImage.color = new Color(0.3f, 0.3f, 0.3f, 1f);
                         }
                         else
                         {
-                            UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Add(rarity);
+                            UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Add(rarity);
                             buttonImage.color = new Color(0.6f, 0.3f, 0.3f, 1f);
                         }
 
@@ -240,7 +240,7 @@ public static class UpgradeSortingPlugin
 
                 showAllBtn = CreateFilterButton("Show All", () =>
                 {
-                    UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
+                    UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
 
                     UpdateFavoriteButtonHighlights(showAllBtn, onlyFavBtn, hideFavBtn, SortHandlingMod.FavoriteFilter.ShowAll);
 
@@ -249,7 +249,7 @@ public static class UpgradeSortingPlugin
 
                 onlyFavBtn = CreateFilterButton("Only Favorite", () =>
                 {
-                    UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowOnlyFavorited;
+                    UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowOnlyFavorited;
 
                     UpdateFavoriteButtonHighlights(showAllBtn, onlyFavBtn, hideFavBtn,
                         SortHandlingMod.FavoriteFilter.ShowOnlyFavorited);
@@ -259,7 +259,7 @@ public static class UpgradeSortingPlugin
 
                 hideFavBtn = CreateFilterButton("Hide Favorite", () =>
                 {
-                    UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.HideFavorited;
+                    UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.HideFavorited;
 
                     UpdateFavoriteButtonHighlights(showAllBtn, onlyFavBtn, hideFavBtn, SortHandlingMod.FavoriteFilter.HideFavorited);
 
@@ -382,18 +382,18 @@ public static class UpgradeSortingPlugin
                         {
                             if (value)
                             {
-                                UpgradeSortingPlugin.CurrentFilters.FilterStats = true;
-                                if (!UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Contains(propertyName))
+                                UpgradeFilteringPlugin.CurrentFilters.FilterStats = true;
+                                if (!UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Contains(propertyName))
                                 {
-                                    UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Add(propertyName);
+                                    UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Add(propertyName);
                                 }
                             }
                             else
                             {
-                                UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Remove(propertyName);
-                                if (UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Count == 0)
+                                UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Remove(propertyName);
+                                if (UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Count == 0)
                                 {
-                                    UpgradeSortingPlugin.CurrentFilters.FilterStats = false;
+                                    UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
                                 }
                             }
 
@@ -679,13 +679,13 @@ public static class UpgradeSortingPlugin
                             {
                                 bool show = true;
 
-                                if (UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Any())
+                                if (UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Any())
                                 {
-                                    show &= !UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Contains(ui.Upgrade
+                                    show &= !UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Contains(ui.Upgrade
                                         .Upgrade.Rarity);
                                 }
 
-                                switch (UpgradeSortingPlugin.CurrentFilters.FavoriteSetting)
+                                switch (UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting)
                                 {
                                     case SortHandlingMod.FavoriteFilter.ShowOnlyFavorited:
                                         show &= ui.Upgrade.Favorite;
@@ -695,12 +695,12 @@ public static class UpgradeSortingPlugin
                                         break;
                                 }
 
-                                if (UpgradeSortingPlugin.CurrentFilters.FilterStats &&
-                                    UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Any())
+                                if (UpgradeFilteringPlugin.CurrentFilters.FilterStats &&
+                                    UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Any())
                                 {
                                     bool hasAllProperties = true;
                                     foreach (var requiredProperty in
-                                             UpgradeSortingPlugin.CurrentFilters.StatIncludeList)
+                                             UpgradeFilteringPlugin.CurrentFilters.StatIncludeList)
                                     {
                                         bool propertyFound = false;
                                         var properties = ui.Upgrade.Upgrade.GetProperties();
@@ -828,8 +828,8 @@ public static class UpgradeSortingPlugin
                             UnityEngine.Object.DestroyImmediate(toggleGo);
                         }
 
-                        UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Clear();
-                        UpgradeSortingPlugin.CurrentFilters.FilterStats = false;
+                        UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Clear();
+                        UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
 
                         var contextProperties = GetContextAwareProperties();
 
@@ -842,18 +842,18 @@ public static class UpgradeSortingPlugin
                                 {
                                     if (value)
                                     {
-                                        UpgradeSortingPlugin.CurrentFilters.FilterStats = true;
-                                        if (!UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Contains(propertyName))
+                                        UpgradeFilteringPlugin.CurrentFilters.FilterStats = true;
+                                        if (!UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Contains(propertyName))
                                         {
-                                            UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Add(propertyName);
+                                            UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Add(propertyName);
                                         }
                                     }
                                     else
                                     {
-                                        UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Remove(propertyName);
-                                        if (UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Count == 0)
+                                        UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Remove(propertyName);
+                                        if (UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Count == 0)
                                         {
-                                            UpgradeSortingPlugin.CurrentFilters.FilterStats = false;
+                                            UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
                                         }
                                     }
 
@@ -1034,10 +1034,10 @@ public static class UpgradeSortingPlugin
                     button.onClick.AddListener(() =>
                     {
 
-                        UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Clear();
-                        UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
-                        UpgradeSortingPlugin.CurrentFilters.FilterStats = false;
-                        UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Clear();
+                        UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Clear();
+                        UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
+                        UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
+                        UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Clear();
 
                         if (filterPanel != null)
                         {
@@ -1176,8 +1176,8 @@ public enum CustomSortingMethod
             if (a.gameObject.activeSelf && !b.gameObject.activeSelf) return -1;
             if (!a.gameObject.activeSelf && b.gameObject.activeSelf) return 1;
 
-            UpgradeSortingPlugin.RarityOrder.TryGetValue(a.Upgrade.Upgrade.Rarity, out var orderA);
-            UpgradeSortingPlugin.RarityOrder.TryGetValue(b.Upgrade.Upgrade.Rarity, out var orderB);
+            UpgradeFilteringPlugin.RarityOrder.TryGetValue(a.Upgrade.Upgrade.Rarity, out var orderA);
+            UpgradeFilteringPlugin.RarityOrder.TryGetValue(b.Upgrade.Upgrade.Rarity, out var orderB);
             int rarityCompare = orderB.CompareTo(orderA);
             return (rarityCompare != 0) ? rarityCompare : CompareUpgradesByFullName(a, b);
         };
@@ -1253,23 +1253,23 @@ public enum CustomSortingMethod
                 {
                     currentSkinMode = (bool)currentSkinModeField.GetValue(__instance);
 
-                    if (UpgradeSortingPlugin.PreviousSkinMode.HasValue && UpgradeSortingPlugin.PreviousSkinMode.Value != currentSkinMode)
+                    if (UpgradeFilteringPlugin.PreviousSkinMode.HasValue && UpgradeFilteringPlugin.PreviousSkinMode.Value != currentSkinMode)
                     {
 
-                        if (UpgradeSortingPlugin.FilterPanel != null)
+                        if (UpgradeFilteringPlugin.FilterPanel != null)
                         {
-                            UpgradeSortingPlugin.FilterPanel.RegenerateStatFilters();
+                            UpgradeFilteringPlugin.FilterPanel.RegenerateStatFilters();
                         }
                     }
 
-                    UpgradeSortingPlugin.PreviousSkinMode = currentSkinMode;
+                    UpgradeFilteringPlugin.PreviousSkinMode = currentSkinMode;
                 }
             }
             catch (Exception e)
             {
             }
 
-            UpgradeSortingPlugin.FilterPanel = new FilterPanelUI();
+            UpgradeFilteringPlugin.FilterPanel = new FilterPanelUI();
 
 
         }
@@ -1321,7 +1321,7 @@ public enum CustomSortingMethod
 
                 filterButton.onClick.RemoveAllListeners();
                 filterButton.onClick.AddListener(() => {
-                    UpgradeSortingPlugin.FilterPanel?.Toggle();
+                    UpgradeFilteringPlugin.FilterPanel?.Toggle();
                 });
 
 
@@ -1398,9 +1398,9 @@ public enum CustomSortingMethod
 
         private static bool HasActiveFilters()
         {
-            return UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Any() ||
-                   UpgradeSortingPlugin.CurrentFilters.FavoriteSetting != SortHandlingMod.FavoriteFilter.ShowAll ||
-                   (UpgradeSortingPlugin.CurrentFilters.FilterStats && UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Any());
+            return UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Any() ||
+                   UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting != SortHandlingMod.FavoriteFilter.ShowAll ||
+                   (UpgradeFilteringPlugin.CurrentFilters.FilterStats && UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Any());
         }
 
         private static void ApplyFiltersToSortedList(GearDetailsWindow window)
@@ -1422,12 +1422,12 @@ public enum CustomSortingMethod
             {
                 bool show = true;
 
-                if (UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Any())
+                if (UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Any())
                 {
-                    show &= !UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Contains(ui.Upgrade.Upgrade.Rarity);
+                    show &= !UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Contains(ui.Upgrade.Upgrade.Rarity);
                 }
 
-                                switch (UpgradeSortingPlugin.CurrentFilters.FavoriteSetting)
+                                switch (UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting)
                                 {
                                     case SortHandlingMod.FavoriteFilter.ShowOnlyFavorited:
                                         show &= ui.Upgrade.Favorite;
@@ -1437,10 +1437,10 @@ public enum CustomSortingMethod
                                         break;
                                 }
 
-                                if (UpgradeSortingPlugin.CurrentFilters.FilterStats && UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Any())
+                                if (UpgradeFilteringPlugin.CurrentFilters.FilterStats && UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Any())
                                 {
                                     bool hasAllProperties = true;
-                                    foreach (var requiredProperty in UpgradeSortingPlugin.CurrentFilters.StatIncludeList)
+                                    foreach (var requiredProperty in UpgradeFilteringPlugin.CurrentFilters.StatIncludeList)
                                     {
                                         bool propertyFound = false;
                                         var properties = ui.Upgrade.Upgrade.GetProperties();

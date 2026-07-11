@@ -1,4 +1,4 @@
-# Upgrade Sorting
+# Upgrade Filtering
 
 A BepInEx mod for MycoPunk that adds advanced filtering and customizable priority sorting to the gear upgrade menu.
 
@@ -51,7 +51,7 @@ dotnet build --configuration Release
 2. The mod will be automatically installed to the correct directory
 
 **Manual Installation**:
-1. Place the built `UpgradeSorting.dll` in your `<MycoPunk Directory>/BepInEx/plugins/` folder
+1. Place the built `UpgradeFiltering.dll` in your `<MycoPunk Directory>/BepInEx/plugins/` folder
 
 ### Executing program
 
@@ -59,7 +59,7 @@ The mod loads automatically through BepInEx when the game starts. Check the BepI
 
 ## Configuration
 
-Access mod settings through the BepInEx configuration file at `<MycoPunk Directory>/BepInEx/config/sparroh.upgradesorting.cfg`.
+Access mod settings through the BepInEx configuration file at `<MycoPunk Directory>/BepInEx/config/sparroh.upgradefiltering.cfg`.
 
 - **Reformat Statistics**: Enable/disable Key: Value stat reformatting (default: enabled)
 

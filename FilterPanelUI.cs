@@ -48,8 +48,8 @@ public class FilterPanelUI
         try
         {
             if (!isInitialized || _statScroll == null) return;
-            UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Clear();
-            UpgradeSortingPlugin.CurrentFilters.FilterStats = false;
+            UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Clear();
+            UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
             RebuildStatToggles();
         }
         catch { /* ignore */ }
@@ -104,20 +104,20 @@ public class FilterPanelUI
                 ("Exotic", Rarity.Exotic),
                 ("Oddity", Rarity.Oddity)
             };
-            UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Clear();
+            UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Clear();
             foreach (var r in rarities)
             {
                 var rarity = r.R;
                 var btn = UIButton.Create(body, r.Name, () =>
                 {
-                    if (UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Contains(rarity))
+                    if (UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Contains(rarity))
                     {
-                        UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Remove(rarity);
+                        UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Remove(rarity);
                         _rarityButtons[rarity].SetStyle(UIButtonStyle.Default);
                     }
                     else
                     {
-                        UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Add(rarity);
+                        UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Add(rarity);
                         _rarityButtons[rarity].SetStyle(UIButtonStyle.Danger);
                     }
                     RefreshUpgrades();
@@ -128,19 +128,19 @@ public class FilterPanelUI
             UIText.Create(body, "FavLbl", "Favorites", UITheme.ScaledFontSmall, UIColors.TextSecondary);
             _favShowAll = UIButton.Create(body, "Show All", () =>
             {
-                UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
+                UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
                 UpdateFavoriteHighlights();
                 RefreshUpgrades();
             }, UIButtonStyle.Active, preferredHeight: UITheme.S(24f));
             _favOnly = UIButton.Create(body, "Only Favorite", () =>
             {
-                UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowOnlyFavorited;
+                UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowOnlyFavorited;
                 UpdateFavoriteHighlights();
                 RefreshUpgrades();
             }, UIButtonStyle.Default, preferredHeight: UITheme.S(24f));
             _favHide = UIButton.Create(body, "Hide Favorite", () =>
             {
-                UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.HideFavorited;
+                UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.HideFavorited;
                 UpdateFavoriteHighlights();
                 RefreshUpgrades();
             }, UIButtonStyle.Default, preferredHeight: UITheme.S(24f));
@@ -162,7 +162,7 @@ public class FilterPanelUI
 
     private void UpdateFavoriteHighlights()
     {
-        var sel = UpgradeSortingPlugin.CurrentFilters.FavoriteSetting;
+        var sel = UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting;
         if (_favShowAll != null)
             _favShowAll.SetStyle(sel == SortHandlingMod.FavoriteFilter.ShowAll ? UIButtonStyle.Active : UIButtonStyle.Default);
         if (_favOnly != null)
@@ -173,10 +173,10 @@ public class FilterPanelUI
 
     private void ClearAllFilters()
     {
-        UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Clear();
-        UpgradeSortingPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
-        UpgradeSortingPlugin.CurrentFilters.FilterStats = false;
-        UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Clear();
+        UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Clear();
+        UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
+        UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
+        UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Clear();
 
         foreach (var kv in _rarityButtons)
             kv.Value.SetStyle(UIButtonStyle.Default);
@@ -198,15 +198,15 @@ public class FilterPanelUI
             {
                 if (value)
                 {
-                    UpgradeSortingPlugin.CurrentFilters.FilterStats = true;
-                    if (!UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Contains(prop))
-                        UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Add(prop);
+                    UpgradeFilteringPlugin.CurrentFilters.FilterStats = true;
+                    if (!UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Contains(prop))
+                        UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Add(prop);
                 }
                 else
                 {
-                    UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Remove(prop);
-                    if (UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Count == 0)
-                        UpgradeSortingPlugin.CurrentFilters.FilterStats = false;
+                    UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Remove(prop);
+                    if (UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Count == 0)
+                        UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
                 }
                 RefreshUpgrades();
             });
@@ -310,10 +310,10 @@ public class FilterPanelUI
                     foreach (var ui in upgradeUIs)
                     {
                         bool show = true;
-                        if (UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Any())
-                            show &= !UpgradeSortingPlugin.CurrentFilters.HiddenRarities.Contains(ui.Upgrade.Upgrade.Rarity);
+                        if (UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Any())
+                            show &= !UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Contains(ui.Upgrade.Upgrade.Rarity);
 
-                        switch (UpgradeSortingPlugin.CurrentFilters.FavoriteSetting)
+                        switch (UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting)
                         {
                             case SortHandlingMod.FavoriteFilter.ShowOnlyFavorited:
                                 show &= ui.Upgrade.Favorite;
@@ -323,11 +323,11 @@ public class FilterPanelUI
                                 break;
                         }
 
-                        if (UpgradeSortingPlugin.CurrentFilters.FilterStats &&
-                            UpgradeSortingPlugin.CurrentFilters.StatIncludeList.Any())
+                        if (UpgradeFilteringPlugin.CurrentFilters.FilterStats &&
+                            UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Any())
                         {
                             bool hasAllProperties = true;
-                            foreach (var requiredProperty in UpgradeSortingPlugin.CurrentFilters.StatIncludeList)
+                            foreach (var requiredProperty in UpgradeFilteringPlugin.CurrentFilters.StatIncludeList)
                             {
                                 bool propertyFound = false;
                                 var properties = ui.Upgrade.Upgrade.GetProperties();

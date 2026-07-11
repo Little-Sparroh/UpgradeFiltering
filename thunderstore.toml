@@ -3,9 +3,9 @@ schemaVersion = "0.0.1"
 
 [package]
 namespace = "Sparroh"
-name = "UpgradeSorting"
+name = "UpgradeFiltering"
 description = "Advanced upgrade filtering and customizable priority sorting for the gear details menu."
-websiteUrl = "https://github.com/Little-Sparroh/UpgradeSorting"
+websiteUrl = "https://github.com/Little-Sparroh/UpgradeFiltering"
 containsNsfwContent = false
 
 [package.dependencies]
@@ -19,8 +19,8 @@ readme = "README.md"
 outdir = "build"
 
 [[build.copy]]
-source = "bin/Release/net48/UpgradeSorting.dll"
-target = "BepInEx/plugins/UpgradeSorting.dll"
+source = "bin/Release/net48/UpgradeFiltering.dll"
+target = "BepInEx/plugins/UpgradeFiltering.dll"
 
 [[build.copy]]
 source = "CHANGELOG.md"

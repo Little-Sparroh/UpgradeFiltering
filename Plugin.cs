@@ -10,8 +10,8 @@ using Sparroh.UI;
 [MycoMod(null, ModFlags.IsClientSide)]
 public class SparrohPlugin : BaseUnityPlugin
 {
-    public const string PluginGUID = "sparroh.upgradesorting";
-    public const string PluginName = "UpgradeSorting";
+    public const string PluginGUID = "sparroh.upgradefiltering";
+    public const string PluginName = "UpgradeFiltering";
     public const string PluginVersion = "1.0.0";
 
     private ConfigEntry<bool> EnableStatReformat;
@@ -78,7 +78,7 @@ public class SparrohPlugin : BaseUnityPlugin
         {
             GearActionBar.Register("filter", "Filter", GearActionBar.OrderFilter, () =>
             {
-                UpgradeSortingPlugin.FilterPanel?.Toggle();
+                UpgradeFilteringPlugin.FilterPanel?.Toggle();
             }, UIButtonStyle.Default);
             _barRegistered = true;
         }
