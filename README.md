@@ -1,12 +1,28 @@
-# ImprovedUpgradeSorting
+# Upgrade Sorting
 
-A BepInEx mod for MycoPunk that provides advanced filtering and sorting options for upgrade lists in gear detail windows.
+A BepInEx mod for MycoPunk that adds advanced filtering and customizable priority sorting to the gear upgrade menu.
 
-## Description
+Originally split out from Enhanced Upgrade Menu as a focused standalone mod.
 
-This client-side mod revolutionizes upgrade management in MycoPunk by adding a comprehensive filtering and sorting system to gear detail windows. Access filters by clicking the bright purple "FILTER" button in any gear upgrade interface. The filter panel allows hiding specific rarities, filtering by favorite status, and showing only upgrades with certain stat properties.
+## Features
 
-The mod includes property-aware sorting that properly handles upgrade names, rarity-ordered sorting, and recently collected upgrade prioritization. The filtering system dynamically adapts to different gear contexts (upgrades vs skins) and supports complex stat-based filtering for advanced upgrade hunting.
+### Filter Panel
+- Toggle a filter panel from the gear details window
+- Hide upgrades by rarity (Standard, Rare, Epic, Exotic, Oddity)
+- Filter by favorites (show all, only favorites, hide favorites)
+- Filter by upgrade stats / properties (context-aware for upgrades vs skins)
+- Clear all filters with one click
+
+### Priority Sort
+- Fully customizable multi-criteria sort order
+- Drag-and-drop reordering of sort priorities
+- Criteria include favorites, locked/unlocked, rarity, trash/turbo status, recently used/acquired, and name
+- Priority order is saved between sessions
+
+### Stat Display Formatting
+- Optional reformatting of upgrade stats from `50 Damage` to `Damage: **50**`
+- Does not affect directive window hover information
+- Toggleable in config
 
 ## Getting Started
 
@@ -15,12 +31,13 @@ The mod includes property-aware sorting that properly handles upgrade names, rar
 * MycoPunk (base game)
 * [BepInEx](https://github.com/BepInEx/BepInEx) - Version 5.4.2403 or compatible
 * .NET Framework 4.8
+* [HarmonyLib](https://github.com/pardeike/Harmony) (included via NuGet)
 
 ### Building/Compiling
 
 1. Clone this repository
 2. Open the solution file in Visual Studio, Rider, or your preferred C# IDE
-3. Build the project in Release mode
+3. Build the project in Release mode to generate the .dll file
 
 Alternatively, use dotnet CLI:
 ```bash
@@ -29,55 +46,43 @@ dotnet build --configuration Release
 
 ### Installing
 
-**Option 1: Via Thunderstore (Recommended)**
-1. Download and install using the Thunderstore Mod Manager
-2. Search for "ImprovedUpgradeSorting" under MycoPunk community
-3. Install and enable the mod
+**Via Thunderstore (Recommended)**:
+1. Download and install via Thunderstore Mod Manager
+2. The mod will be automatically installed to the correct directory
 
-**Option 2: Manual Installation**
-1. Ensure BepInEx is installed for MycoPunk
-2. Copy `ImprovedUpgradeSorting.dll` from the build folder
-3. Place it in `<MycoPunk Game Directory>/BepInEx/plugins/`
-4. Launch the game
+**Manual Installation**:
+1. Place the built `UpgradeSorting.dll` in your `<MycoPunk Directory>/BepInEx/plugins/` folder
 
 ### Executing program
 
-Once installed, filtering functionality is available in all gear detail windows:
+The mod loads automatically through BepInEx when the game starts. Check the BepInEx console for loading confirmation messages.
 
-**Accessing Filters:**
-1. Open any gear details window
-2. Look for the bright purple "FILTER" button
-3. Click to toggle the filter panel
-4. Use filters to customize your upgrade display:
-   - **Rarity Hiding:** Click rarity names to hide/show upgrades of that rarity
-   - **Favorite Filtering:** Choose to show all, only favorites, or hide favorites
-   - **Stat Filtering:** Select specific stat properties to show only upgrades with those attributes
-   - **Clear All:** Reset all filters with the clear button
+## Configuration
 
-**Sorting Options:**
-- Enhanced sorting that respects upgrade instance names
-- Proper rarity ordering (Oddity > Exotic > Epic > Rare > Standard)
-- Recently collected upgrades sorting
-- Automatic filter reapplication after sorting changes
+Access mod settings through the BepInEx configuration file at `<MycoPunk Directory>/BepInEx/config/sparroh.upgradesorting.cfg`.
 
-The system automatically adapts to upgrade vs skin context and applies filters in real-time.
+- **Reformat Statistics**: Enable/disable Key: Value stat reformatting (default: enabled)
+
+Priority sort order is stored via the game's player options (`SortPriority.Order`).
+
+## Usage
+
+1. Open a gear details window
+2. Click **Filter** to open the filter panel
+3. Click **Priority Sort** to open the drag-and-drop priority editor
+4. Save your priority order to apply a custom multi-criteria sort
 
 ## Help
 
-* **Filter button not showing?** Make sure you're in a gear details window and it may take a second to load
-* **Filters not applying?** Click away from the filter panel to apply changes
-* **Wrong stat properties?** Stat filters automatically adapt to the current gear type
-* **Sorting not working?** The mod enhances existing sorting - try changing sort mode in gear window
-* **Performance issues?** Filters are only active when the filter panel is open
-* **UI elements overlapping?** The filter panel positions itself to avoid conflicts with other UI
-* **Lost my filter settings?** Filters reset when closing the gear window - use favorites instead
+* **Mod not loading?** Verify BepInEx is installed correctly and check console logs for errors
+* **Filter panel missing?** Open gear details first, then click the Filter button
+* **Priority sort not applying?** Open Priority Sort, arrange criteria, then click Save
+* **UI elements missing?** Confirm mod version compatibility and verify no other mods are interfering
 
 ## Authors
 
-* Sparroh
-* funlennysub (original mod template)
-* [@DomPizzie](https://twitter.com/dompizzie) (README template)
+- Sparroh
 
 ## License
 
-* This project is licensed under the MIT License - see the LICENSE.md file for details
+This project is licensed under the MIT License - see the LICENSE file for details
