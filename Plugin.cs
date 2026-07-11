@@ -34,7 +34,7 @@ public class SparrohPlugin : BaseUnityPlugin
                 EnableStatReformat = Config.Bind(
                     "General",
                     "Reformat Statistics",
-                    true,
+                    false,
                     "Force Key: Value stat format");
                 FormatHandling.enableStatReformat = EnableStatReformat.Value;
                 EnableStatReformat.SettingChanged += (_, _) =>
