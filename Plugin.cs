@@ -1,22 +1,20 @@
-﻿using BepInEx;
-using BepInEx.Configuration;
+﻿using System;
+using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using UnityEngine;
 using Sparroh.UI;
 
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
 [BepInDependency("sparroh.uilibrary")]
 [MycoMod(null, ModFlags.IsClientSide)]
-public class SparrohPlugin : BaseUnityPlugin
+public class UpgradeFilteringPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "sparroh.upgradefiltering";
     public const string PluginName = "UpgradeFiltering";
-    public const string PluginVersion = "1.1.0";
+    public const string PluginVersion = "1.1.2";
 
-    private ConfigEntry<bool> EnableStatReformat;
     internal static ManualLogSource Logger;
-    public static SparrohPlugin Instance;
+    public static UpgradeFilteringPlugin Instance;
 
     private bool _barRegistered;
 
@@ -31,35 +29,95 @@ public class SparrohPlugin : BaseUnityPlugin
 
             try
             {
-                EnableStatReformat = Config.Bind(
-                    "General",
-                    "Reformat Statistics",
-                    false,
-                    "Force Key: Value stat format");
-                FormatHandling.enableStatReformat = EnableStatReformat.Value;
-                EnableStatReformat.SettingChanged += (_, _) =>
-                {
-                    FormatHandling.enableStatReformat = EnableStatReformat.Value;
-                };
+                ConfigManager.Initialize(Config, Logger);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogError($"Failed to setup configuration bindings: {ex.Message}");
             }
 
-            try { FormatHandling.Initialize(); }
-            catch (System.Exception ex) { Logger.LogError($"Failed to initialize FormatHandling: {ex.Message}"); }
+            try
+            {
+                StatFormatHandling.Initialize();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to initialize StatFormatHandling: {ex.Message}");
+            }
 
-            try { SortHandling.AddPriorityGUI(); }
-            catch (System.Exception ex) { Logger.LogError($"Failed to initialize PriorityGUI: {ex.Message}"); }
+            try
+            {
+                PriorityGUI.EnsureExists();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to initialize PriorityGUI: {ex.Message}");
+            }
 
-            try { PriorityPatches.Patch(harmony); }
-            catch (System.Exception ex) { Logger.LogError($"Failed to apply PriorityPatches: {ex.Message}"); }
 
-            try { harmony.PatchAll(); }
-            catch (System.Exception ex) { Logger.LogError($"Failed to apply Harmony patches: {ex.Message}"); }
+            try
+            {
+                PriorityPatches.Patch(harmony);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to apply PriorityPatches: {ex.Message}");
+            }
+
+
+            foreach (var type in new[]
+                     {
+                         typeof(GearDetailsWindowPatches),
+                         typeof(SetupUpgradesPatch),
+                         typeof(SortUpgradesMethodPatch),
+                         typeof(PriorityPatches)
+                     })
+
+                try
+                {
+                    harmony.PatchAll(type);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"Failed to patch {type.Name}: {ex.Message}");
+                }
+
+
+            try
+            {
+                foreach (var type in typeof(UpgradeFilteringPlugin).Assembly.GetTypes())
+                {
+                    if (type == typeof(GearDetailsWindowPatches) ||
+                        type == typeof(SetupUpgradesPatch) ||
+                        type == typeof(SortUpgradesMethodPatch) ||
+                        type == typeof(PriorityPatches) ||
+                        type == typeof(ListRebuildReapply))
+                        continue;
+
+
+                    if (!type.IsClass)
+                        continue;
+
+                    var attrs = type.GetCustomAttributes(typeof(HarmonyPatch), true);
+                    if (attrs == null || attrs.Length == 0)
+                        continue;
+
+                    try
+                    {
+                        harmony.PatchAll(type);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"Failed to patch {type.Name}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed scanning assembly patches: {ex.Message}");
+            }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Logger.LogError($"Critical error during mod initialization: {ex.Message}\n{ex.StackTrace}");
         }
@@ -69,6 +127,7 @@ public class SparrohPlugin : BaseUnityPlugin
 
     private void Update()
     {
+        ConfigManager.Tick();
         GearActionBar.Tick();
 
         if (!GearActionBar.IsGearMenuOpen())
@@ -76,17 +135,19 @@ public class SparrohPlugin : BaseUnityPlugin
 
         if (!_barRegistered)
         {
-            GearActionBar.Register("filter", "Filter", GearActionBar.OrderFilter, () =>
-            {
-                UpgradeFilteringPlugin.FilterPanel?.Toggle();
-            }, UIButtonStyle.Default);
+            GearActionBar.Register("filter", "Filter", GearActionBar.OrderFilter,
+                () => { FilterState.FilterPanel?.Toggle(); });
+            GearActionBar.Register("priority", "Upgr. Sort", GearActionBar.OrderPriority,
+                PriorityGUI.ToggleWindowStatic, UIButtonStyle.Primary);
             _barRegistered = true;
         }
     }
 
     private void OnDestroy()
     {
+        ConfigManager.Dispose();
         GearActionBar.Unregister("filter");
+        GearActionBar.Unregister("priority");
         _barRegistered = false;
     }
 }

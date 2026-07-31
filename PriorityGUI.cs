@@ -1,56 +1,97 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using Sparroh.UI;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class PriorityGUI : MonoBehaviour
 {
-    private bool showWindow;
-    private List<PriorityCriteria> currentOrder;
-    private UIWindow _window;
-    private UIDragList _list;
-    private bool _barRegistered;
-
-
-    private static readonly PriorityCriteria[] DefaultOrder =
+    private static readonly PriorityCriteria[] BaseDefaultOrder =
     {
-        PriorityCriteria.Favorited, PriorityCriteria.NotFavorited, PriorityCriteria.Unlocked,
-        PriorityCriteria.Locked, PriorityCriteria.RecentlyUsed, PriorityCriteria.RecentlyAcquired,
-        PriorityCriteria.InstanceName, PriorityCriteria.Oddity, PriorityCriteria.Exotic,
-        PriorityCriteria.Epic, PriorityCriteria.Rare, PriorityCriteria.Standard,
-        PriorityCriteria.Turbocharged, PriorityCriteria.Trashed, PriorityCriteria.NotTurbocharged,
-        PriorityCriteria.NotTrashed
+        PriorityCriteria.Favorited,
+        PriorityCriteria.NotFavorited,
+        PriorityCriteria.Unlocked,
+        PriorityCriteria.Locked,
+        PriorityCriteria.Oddity,
+        PriorityCriteria.Exotic,
+        PriorityCriteria.Epic,
+        PriorityCriteria.Rare,
+        PriorityCriteria.Standard,
+        PriorityCriteria.Turbocharged,
+        PriorityCriteria.NotTurbocharged,
+        PriorityCriteria.RecentlyUsed,
+        PriorityCriteria.RecentlyAcquired,
+        PriorityCriteria.InstanceName
     };
 
-    void Awake()
+    private static readonly PriorityCriteria[] TrashCriteria =
     {
+        PriorityCriteria.Trashed, PriorityCriteria.NotTrashed
+    };
+
+    private UIDragList _list;
+    private UIWindow _window;
+    private List<PriorityCriteria> currentOrder;
+    private bool showWindow;
+
+    public static PriorityGUI Instance { get; private set; }
+
+    private void Awake()
+    {
+        Instance = this;
         DontDestroyOnLoad(gameObject);
         currentOrder = PriorityPatches.LoadPriorityOrder();
     }
 
-    void Update()
+    private void Update()
     {
-        GearActionBar.Tick();
-        bool gearOpen = PriorityPatches.IsWindowOpen || GearActionBar.IsGearMenuOpen();
-        if (gearOpen)
-        {
-            if (!_barRegistered)
-            {
-                GearActionBar.Register("priority", "Upgr. Sort", GearActionBar.OrderPriority, ToggleWindow, UIButtonStyle.Primary);
-                _barRegistered = true;
-            }
-        }
-        else if (showWindow)
-        {
-            CloseWindow(reload: true);
-        }
+        var gearOpen = PriorityPatches.IsWindowOpen || GearActionBar.IsGearMenuOpen();
+        if (!gearOpen && showWindow)
+            CloseWindow(true);
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    private static List<PriorityCriteria> BuildDefaultOrder()
+    {
+        var list = BaseDefaultOrder.ToList();
+        if (PriorityPatches.IsBatchScrappingPresent())
+        {
+            var idx = list.IndexOf(PriorityCriteria.Locked);
+            if (idx < 0) idx = list.Count - 1;
+            list.InsertRange(idx + 1, TrashCriteria);
+        }
+
+        return list;
+    }
+
+    public static void EnsureExists()
+    {
+        var existing = FindObjectOfType<PriorityGUI>();
+        if (existing != null)
+        {
+            Destroy(existing.gameObject);
+            Instance = null;
+        }
+
+        var go = new GameObject("PriorityGUI");
+        go.AddComponent<PriorityGUI>();
+    }
+
+    public static void ToggleWindowStatic()
+    {
+        if (Instance == null) return;
+        Instance.ToggleWindow();
+    }
 
     private void ToggleWindow()
     {
         if (showWindow)
-            CloseWindow(reload: true);
+            CloseWindow(true);
         else
             OpenWindow();
     }
@@ -60,20 +101,26 @@ public class PriorityGUI : MonoBehaviour
         showWindow = true;
         currentOrder = PriorityPatches.LoadPriorityOrder();
         if (currentOrder == null || currentOrder.Count == 0)
-            currentOrder = DefaultOrder.ToList();
+            currentOrder = BuildDefaultOrder();
+        else
+            currentOrder = PriorityPatches.FilterOrderForAvailableMods(currentOrder);
 
         if (_window == null)
         {
-            _window = UIWindow.Create("SortPriority", new Vector2(340f, 560f), "Sort Priority",
-                scrollable: false, closeButton: true);
-            _window.OnClose(() => CloseWindow(reload: true));
+            _window = UIWindow.Create("SortPriority", new Vector2(340f, 560f), "Sort Priority");
+            _window.OnClose(() => CloseWindow(true));
 
             var body = _window.Content;
             UIFactory.AddVerticalLayout(body.gameObject, UITheme.S(8f), UITheme.ScaledPadding(8, 8, 8, 8));
 
+            UIText.Create(body, "Hint",
+                "Higher = applied first. Put rarities above Name/Recently* or they won't matter.",
+                UITheme.ScaledFontSmall, UIColors.TextSecondary);
+
             _list = UIDragList.Create(body, "PriorityList");
-            UIHelpers.EnsureLayoutElement(_list.GameObject, preferredHeight: UITheme.S(420f), minHeight: UITheme.S(300f));
-            var listLe = _list.GameObject.GetComponent<UnityEngine.UI.LayoutElement>();
+            UIHelpers.EnsureLayoutElement(_list.GameObject, preferredHeight: UITheme.S(400f),
+                minHeight: UITheme.S(280f));
+            var listLe = _list.GameObject.GetComponent<LayoutElement>();
             if (listLe != null) listLe.flexibleHeight = 1f;
 
             _list.OnReordered((from, to) =>
@@ -86,23 +133,24 @@ public class PriorityGUI : MonoBehaviour
             });
 
             var btnRow = UIFactory.CreateRect("Buttons", body);
-            UIHelpers.EnsureLayoutElement(btnRow.gameObject, preferredHeight: UITheme.ScaledButtonHeight + UITheme.S(4f));
+            UIHelpers.EnsureLayoutElement(btnRow.gameObject,
+                preferredHeight: UITheme.ScaledButtonHeight + UITheme.S(4f));
             UIFactory.AddHorizontalLayout(btnRow.gameObject, UITheme.S(8f), new RectOffset(0, 0, 0, 0),
-                TextAnchor.MiddleCenter, controlChildWidth: false, expandWidth: false);
+                TextAnchor.MiddleCenter, false);
 
             UIButton.Create(btnRow, "Save", () =>
             {
                 PriorityPatches.SavePriorityOrder(currentOrder);
-                PriorityPatches.TriggerPrioritySort();
-                CloseWindow(reload: false);
+                PriorityPatches.TriggerPrioritySort(currentOrder);
+                CloseWindow(false);
             }, UIButtonStyle.Primary).SetWidth(UITheme.S(90f));
 
-            UIButton.Create(btnRow, "Cancel", () => CloseWindow(reload: true), UIButtonStyle.Default)
+            UIButton.Create(btnRow, "Cancel", () => CloseWindow(true))
                 .SetWidth(UITheme.S(90f));
 
             UIButton.Create(btnRow, "Reset", () =>
             {
-                currentOrder = DefaultOrder.ToList();
+                currentOrder = BuildDefaultOrder();
                 RefreshList();
             }, UIButtonStyle.Danger).SetWidth(UITheme.S(90f));
         }
@@ -130,7 +178,7 @@ public class PriorityGUI : MonoBehaviour
             _window.Hide();
     }
 
-    string GetCriteriaName(PriorityCriteria criteria)
+    private string GetCriteriaName(PriorityCriteria criteria)
     {
         return criteria switch
         {
@@ -140,16 +188,16 @@ public class PriorityGUI : MonoBehaviour
             PriorityCriteria.Locked => "Locked",
             PriorityCriteria.RecentlyUsed => "Recently Used",
             PriorityCriteria.RecentlyAcquired => "Recently Acquired",
-            PriorityCriteria.InstanceName => "Upgrade Instance Name",
+            PriorityCriteria.InstanceName => "Name (tie-break)",
             PriorityCriteria.Oddity => "Oddity",
             PriorityCriteria.Exotic => "Exotic",
             PriorityCriteria.Epic => "Epic",
             PriorityCriteria.Rare => "Rare",
             PriorityCriteria.Standard => "Standard",
             PriorityCriteria.Turbocharged => "Turbocharged",
-            PriorityCriteria.Trashed => "Trashed",
+            PriorityCriteria.Trashed => "Trashed (BatchScrapping)",
             PriorityCriteria.NotTurbocharged => "Not Turbocharged",
-            PriorityCriteria.NotTrashed => "Not Trashed",
+            PriorityCriteria.NotTrashed => "Not Trashed (BatchScrapping)",
             _ => "Unknown"
         };
     }

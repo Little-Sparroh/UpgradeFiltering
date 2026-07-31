@@ -9,26 +9,23 @@ public class PriorityData
 
     public PriorityData()
     {
-        order = new List<int>();
-        if (order.Count == 0)
+        order = new List<int>
         {
-            order.Add((int)PriorityCriteria.Favorited);
-            order.Add((int)PriorityCriteria.NotFavorited);
-            order.Add((int)PriorityCriteria.Unlocked);
-            order.Add((int)PriorityCriteria.Locked);
-            order.Add((int)PriorityCriteria.Trashed);
-            order.Add((int)PriorityCriteria.NotTrashed);
-            order.Add((int)PriorityCriteria.Oddity);
-            order.Add((int)PriorityCriteria.Exotic);
-            order.Add((int)PriorityCriteria.Epic);
-            order.Add((int)PriorityCriteria.Rare);
-            order.Add((int)PriorityCriteria.Standard);
-            order.Add((int)PriorityCriteria.InstanceName);
-            order.Add((int)PriorityCriteria.Turbocharged);
-            order.Add((int)PriorityCriteria.NotTurbocharged);
-            order.Add((int)PriorityCriteria.RecentlyUsed);
-            order.Add((int)PriorityCriteria.RecentlyAcquired);
-        }
+            (int)PriorityCriteria.Favorited,
+            (int)PriorityCriteria.NotFavorited,
+            (int)PriorityCriteria.Unlocked,
+            (int)PriorityCriteria.Locked,
+            (int)PriorityCriteria.Oddity,
+            (int)PriorityCriteria.Exotic,
+            (int)PriorityCriteria.Epic,
+            (int)PriorityCriteria.Rare,
+            (int)PriorityCriteria.Standard,
+            (int)PriorityCriteria.Turbocharged,
+            (int)PriorityCriteria.NotTurbocharged,
+            (int)PriorityCriteria.RecentlyUsed,
+            (int)PriorityCriteria.RecentlyAcquired,
+            (int)PriorityCriteria.InstanceName
+        };
     }
 
     public string ToJson()

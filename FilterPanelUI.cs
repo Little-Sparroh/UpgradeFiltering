@@ -2,26 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
-using UnityEngine;
 using Sparroh.UI;
+using UnityEngine;
 
-/// <summary>
-/// Themed upgrade filter panel (SparrohUILib UIWindow).
-/// Opened via GearActionBar "Filter" button.
-/// </summary>
 public class FilterPanelUI
 {
+    private readonly Dictionary<Rarity, UIButton> _rarityButtons = new();
+    private UIButton _favHide;
+    private UIButton _favOnly;
+    private UIButton _favShowAll;
+    private UIScrollView _statScroll;
     private UIWindow _window;
-    private bool isExpanded;
     private bool isInitialized;
 
-    private readonly Dictionary<Rarity, UIButton> _rarityButtons = new Dictionary<Rarity, UIButton>();
-    private UIButton _favShowAll;
-    private UIButton _favOnly;
-    private UIButton _favHide;
-    private UIScrollView _statScroll;
-
-    public bool IsExpanded => isExpanded;
+    public bool IsExpanded { get; private set; }
 
     public void Toggle()
     {
@@ -31,15 +25,15 @@ public class FilterPanelUI
             if (!isInitialized) return;
         }
 
-        isExpanded = !isExpanded;
-        if (isExpanded)
+        IsExpanded = !IsExpanded;
+        if (IsExpanded)
         {
             RegenerateStatFilters();
             _window.Show();
         }
         else
         {
-            _window.Hide(invokeClose: false);
+            _window.Hide(false);
         }
     }
 
@@ -48,34 +42,39 @@ public class FilterPanelUI
         try
         {
             if (!isInitialized || _statScroll == null) return;
-            UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Clear();
-            UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
+            FilterState.CurrentFilters.StatIncludeList.Clear();
+            FilterState.CurrentFilters.FilterStats = false;
             RebuildStatToggles();
         }
-        catch { /* ignore */ }
+        catch
+        {
+        }
     }
 
     public void RebuildFilterPanel()
     {
         try
         {
-            bool wasExpanded = isExpanded;
+            var wasExpanded = IsExpanded;
             if (_window != null)
             {
                 _window.Destroy();
                 _window = null;
             }
+
             _rarityButtons.Clear();
             isInitialized = false;
-            isExpanded = false;
+            IsExpanded = false;
             CreateFilterPanel();
             if (wasExpanded && isInitialized)
             {
-                isExpanded = true;
+                IsExpanded = true;
                 _window.Show();
             }
         }
-        catch { /* ignore */ }
+        catch
+        {
+        }
     }
 
     private void CreateFilterPanel()
@@ -86,8 +85,8 @@ public class FilterPanelUI
         {
             UITheme.Initialize();
             _window = UIWindow.Create("UpgradeFilter", new Vector2(280f, 480f), "Upgrade Filters",
-                scrollable: true, closeButton: true, sortingOrder: UITheme.WindowSortingOrder + 7);
-            _window.OnClose(() => { isExpanded = false; });
+                true, true, UITheme.WindowSortingOrder + 7);
+            _window.OnClose(() => { IsExpanded = false; });
 
             var body = _window.Content;
             UIFactory.AddVerticalLayout(body.gameObject, UITheme.S(6f), UITheme.ScaledPadding(6, 6, 6, 6));
@@ -104,55 +103,67 @@ public class FilterPanelUI
                 ("Exotic", Rarity.Exotic),
                 ("Oddity", Rarity.Oddity)
             };
-            UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Clear();
+
             foreach (var r in rarities)
+
             {
                 var rarity = r.R;
+                var initiallyHidden = FilterState.CurrentFilters.HiddenRarities.Contains(rarity);
                 var btn = UIButton.Create(body, r.Name, () =>
-                {
-                    if (UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Contains(rarity))
                     {
-                        UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Remove(rarity);
-                        _rarityButtons[rarity].SetStyle(UIButtonStyle.Default);
-                    }
-                    else
-                    {
-                        UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Add(rarity);
-                        _rarityButtons[rarity].SetStyle(UIButtonStyle.Danger);
-                    }
-                    RefreshUpgrades();
-                }, UIButtonStyle.Default, preferredHeight: UITheme.S(24f));
+                        if (FilterState.CurrentFilters.HiddenRarities.Contains(rarity))
+                        {
+                            FilterState.CurrentFilters.HiddenRarities.Remove(rarity);
+                            _rarityButtons[rarity].SetStyle(UIButtonStyle.Default);
+                            UpgradeFilteringPlugin.Logger.LogInfo($"Filter: show rarity {rarity}");
+                        }
+                        else
+                        {
+                            FilterState.CurrentFilters.HiddenRarities.Add(rarity);
+                            _rarityButtons[rarity].SetStyle(UIButtonStyle.Danger);
+                            UpgradeFilteringPlugin.Logger.LogInfo($"Filter: hide rarity {rarity}");
+                        }
+
+                        UpgradeFilteringPlugin.Logger.LogInfo(
+                            $"Filter: HiddenRarities=[{string.Join(",", FilterState.CurrentFilters.HiddenRarities)}]");
+                        RefreshUpgrades();
+                    }, initiallyHidden ? UIButtonStyle.Danger : UIButtonStyle.Default,
+                    preferredHeight: UITheme.S(24f));
+
                 _rarityButtons[rarity] = btn;
             }
+
 
             UIText.Create(body, "FavLbl", "Favorites", UITheme.ScaledFontSmall, UIColors.TextSecondary);
             _favShowAll = UIButton.Create(body, "Show All", () =>
             {
-                UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
+                FilterState.CurrentFilters.FavoriteSetting = FavoriteFilter.ShowAll;
                 UpdateFavoriteHighlights();
                 RefreshUpgrades();
             }, UIButtonStyle.Active, preferredHeight: UITheme.S(24f));
             _favOnly = UIButton.Create(body, "Only Favorite", () =>
             {
-                UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowOnlyFavorited;
+                FilterState.CurrentFilters.FavoriteSetting =
+                    FavoriteFilter.ShowOnlyFavorited;
                 UpdateFavoriteHighlights();
                 RefreshUpgrades();
-            }, UIButtonStyle.Default, preferredHeight: UITheme.S(24f));
+            }, preferredHeight: UITheme.S(24f));
             _favHide = UIButton.Create(body, "Hide Favorite", () =>
             {
-                UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.HideFavorited;
+                FilterState.CurrentFilters.FavoriteSetting = FavoriteFilter.HideFavorited;
                 UpdateFavoriteHighlights();
                 RefreshUpgrades();
-            }, UIButtonStyle.Default, preferredHeight: UITheme.S(24f));
+            }, preferredHeight: UITheme.S(24f));
 
             UIText.Create(body, "StatLbl", "Show Only With", UITheme.ScaledFontSmall, UIColors.TextSecondary);
             _statScroll = UIScrollView.Create(body, "StatScroll");
-            UIHelpers.EnsureLayoutElement(_statScroll.GameObject, preferredHeight: UITheme.S(160f), minHeight: UITheme.S(120f));
+            UIHelpers.EnsureLayoutElement(_statScroll.GameObject, preferredHeight: UITheme.S(160f),
+                minHeight: UITheme.S(120f));
             RebuildStatToggles();
 
-            _window.Hide(invokeClose: false);
+            _window.Hide(false);
             isInitialized = true;
-            isExpanded = false;
+            IsExpanded = false;
         }
         catch (Exception)
         {
@@ -162,21 +173,27 @@ public class FilterPanelUI
 
     private void UpdateFavoriteHighlights()
     {
-        var sel = UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting;
+        var sel = FilterState.CurrentFilters.FavoriteSetting;
         if (_favShowAll != null)
-            _favShowAll.SetStyle(sel == SortHandlingMod.FavoriteFilter.ShowAll ? UIButtonStyle.Active : UIButtonStyle.Default);
+            _favShowAll.SetStyle(sel == FavoriteFilter.ShowAll
+                ? UIButtonStyle.Active
+                : UIButtonStyle.Default);
         if (_favOnly != null)
-            _favOnly.SetStyle(sel == SortHandlingMod.FavoriteFilter.ShowOnlyFavorited ? UIButtonStyle.Active : UIButtonStyle.Default);
+            _favOnly.SetStyle(sel == FavoriteFilter.ShowOnlyFavorited
+                ? UIButtonStyle.Active
+                : UIButtonStyle.Default);
         if (_favHide != null)
-            _favHide.SetStyle(sel == SortHandlingMod.FavoriteFilter.HideFavorited ? UIButtonStyle.Active : UIButtonStyle.Default);
+            _favHide.SetStyle(sel == FavoriteFilter.HideFavorited
+                ? UIButtonStyle.Active
+                : UIButtonStyle.Default);
     }
 
     private void ClearAllFilters()
     {
-        UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Clear();
-        UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting = SortHandlingMod.FavoriteFilter.ShowAll;
-        UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
-        UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Clear();
+        FilterState.CurrentFilters.HiddenRarities.Clear();
+        FilterState.CurrentFilters.FavoriteSetting = FavoriteFilter.ShowAll;
+        FilterState.CurrentFilters.FilterStats = false;
+        FilterState.CurrentFilters.StatIncludeList.Clear();
 
         foreach (var kv in _rarityButtons)
             kv.Value.SetStyle(UIButtonStyle.Default);
@@ -198,16 +215,17 @@ public class FilterPanelUI
             {
                 if (value)
                 {
-                    UpgradeFilteringPlugin.CurrentFilters.FilterStats = true;
-                    if (!UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Contains(prop))
-                        UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Add(prop);
+                    FilterState.CurrentFilters.FilterStats = true;
+                    if (!FilterState.CurrentFilters.StatIncludeList.Contains(prop))
+                        FilterState.CurrentFilters.StatIncludeList.Add(prop);
                 }
                 else
                 {
-                    UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Remove(prop);
-                    if (UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Count == 0)
-                        UpgradeFilteringPlugin.CurrentFilters.FilterStats = false;
+                    FilterState.CurrentFilters.StatIncludeList.Remove(prop);
+                    if (FilterState.CurrentFilters.StatIncludeList.Count == 0)
+                        FilterState.CurrentFilters.FilterStats = false;
                 }
+
                 RefreshUpgrades();
             });
             UIHelpers.EnsureLayoutElement(toggle.GameObject, preferredHeight: UITheme.S(22f));
@@ -218,16 +236,22 @@ public class FilterPanelUI
     {
         try
         {
-            var window = GameObject.Find("Gear Details")?.GetComponent<GearDetailsWindow>();
-            bool isSkinMode = false;
+            var window = FilterState.GetOpenWindow();
+            var isSkinMode = false;
             if (window != null)
+
             {
                 var inSkinModeField = AccessTools.Field(typeof(GearDetailsWindow), "inSkinMode");
                 if (inSkinModeField != null)
-                {
-                    try { isSkinMode = (bool)inSkinModeField.GetValue(window); } catch { /* ignore */ }
-                }
+                    try
+                    {
+                        isSkinMode = (bool)inSkinModeField.GetValue(window);
+                    }
+                    catch
+                    {
+                    }
             }
+
             return isSkinMode ? DiscoverSkinProperties() : GetCuratedUpgradeProperties();
         }
         catch
@@ -261,11 +285,12 @@ public class FilterPanelUI
                 .ToList();
             foreach (var type in skinTypes)
             {
-                string propertyName = type.Name;
+                var propertyName = type.Name;
                 if (propertyName.StartsWith("SkinUpgradeProperty_"))
                     propertyName = propertyName.Substring("SkinUpgradeProperty_".Length);
                 properties.Add(propertyName);
             }
+
             return properties.Distinct().OrderBy(p => p).ToList();
         }
         catch
@@ -276,109 +301,23 @@ public class FilterPanelUI
 
     private void RefreshUpgrades()
     {
-        var window = GameObject.Find("Gear Details")?.GetComponent<GearDetailsWindow>();
-        if (window == null) return;
+        var window = PriorityPatches.ResolveWindow() ?? FilterState.GetOpenWindow();
+        if (window == null)
+        {
+            UpgradeFilteringPlugin.Logger.LogWarning("Filter refresh: no GearDetailsWindow.");
+            return;
+        }
+
+        UpgradeFilteringPlugin.Logger.LogInfo(
+            $"Filter refresh: window={window.name}, priorityActive={PriorityPatches.PrioritySortActive}");
 
         try
         {
-            var inSkinModeField = AccessTools.Field(typeof(GearDetailsWindow), "inSkinMode");
-            bool isInSkinMode = false;
-            if (inSkinModeField != null)
-                isInSkinMode = (bool)inSkinModeField.GetValue(window);
-
-            var sortingMethodField = isInSkinMode
-                ? AccessTools.Field(typeof(GearDetailsWindow), "currentSortingMethodSkins")
-                : AccessTools.Field(typeof(GearDetailsWindow), "currentSortingMethodUpgrades");
-
-            GearDetailsWindow.SortingMethod currentMethod = GearDetailsWindow.SortingMethod.Name;
-            if (sortingMethodField != null)
-            {
-                try { currentMethod = (GearDetailsWindow.SortingMethod)sortingMethodField.GetValue(window); }
-                catch { /* ignore */ }
-            }
-
-            var upgradeUIsField = AccessTools.Field(typeof(GearDetailsWindow), "upgradeUIs") ??
-                                  AccessTools.Field(typeof(GearDetailsWindow), "<upgradeUIs>k__BackingField") ??
-                                  AccessTools.Field(typeof(GearDetailsWindow), "upgrades");
-
-            if (upgradeUIsField != null)
-            {
-                var upgradeUIs = (List<GearUpgradeUI>)upgradeUIsField.GetValue(window);
-                if (upgradeUIs != null)
-                {
-                    int visibleCount = 0;
-                    foreach (var ui in upgradeUIs)
-                    {
-                        bool show = true;
-                        if (UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Any())
-                            show &= !UpgradeFilteringPlugin.CurrentFilters.HiddenRarities.Contains(ui.Upgrade.Upgrade.Rarity);
-
-                        switch (UpgradeFilteringPlugin.CurrentFilters.FavoriteSetting)
-                        {
-                            case SortHandlingMod.FavoriteFilter.ShowOnlyFavorited:
-                                show &= ui.Upgrade.Favorite;
-                                break;
-                            case SortHandlingMod.FavoriteFilter.HideFavorited:
-                                show &= !ui.Upgrade.Favorite;
-                                break;
-                        }
-
-                        if (UpgradeFilteringPlugin.CurrentFilters.FilterStats &&
-                            UpgradeFilteringPlugin.CurrentFilters.StatIncludeList.Any())
-                        {
-                            bool hasAllProperties = true;
-                            foreach (var requiredProperty in UpgradeFilteringPlugin.CurrentFilters.StatIncludeList)
-                            {
-                                bool propertyFound = false;
-                                var properties = ui.Upgrade.Upgrade.GetProperties();
-                                while (properties.MoveNext())
-                                {
-                                    var property = properties.Current;
-                                    string propName = property.GetType().Name;
-                                    if (propName.StartsWith("UpgradeProperty_"))
-                                        propName = propName.Substring("UpgradeProperty_".Length);
-                                    else if (propName.StartsWith("SkinUpgradeProperty_"))
-                                        propName = propName.Substring("SkinUpgradeProperty_".Length);
-                                    if (propName == requiredProperty)
-                                    {
-                                        propertyFound = true;
-                                        break;
-                                    }
-                                }
-                                if (!propertyFound)
-                                {
-                                    hasAllProperties = false;
-                                    break;
-                                }
-                            }
-                            show &= hasAllProperties;
-                        }
-
-                        ui.gameObject.SetActive(show);
-                        if (show)
-                        {
-                            visibleCount++;
-                            ui.transform.SetSiblingIndex(visibleCount - 1);
-                        }
-                    }
-
-                    var countField = AccessTools.Field(typeof(GearDetailsWindow), "upgradeUICount");
-                    if (countField != null)
-                        countField.SetValue(window, visibleCount);
-                }
-            }
-
-            AccessTools.Method(typeof(GearDetailsWindow), "SortUpgrades",
-                    new Type[] { typeof(GearDetailsWindow.SortingMethod), typeof(bool) })
-                ?.Invoke(window, new object[] { currentMethod, false });
-
-            try
-            {
-                AccessTools.Method(typeof(GearDetailsWindow), "SwitchUpgradeView")?.Invoke(window, new object[0]);
-                AccessTools.Method(typeof(GearDetailsWindow), "SwitchUpgradeView")?.Invoke(window, new object[0]);
-            }
-            catch { /* ignore */ }
+            FilterState.ApplyToWindow(window);
         }
-        catch { /* ignore */ }
+        catch (Exception ex)
+        {
+            UpgradeFilteringPlugin.Logger.LogError($"Filter refresh failed: {ex.Message}\n{ex.StackTrace}");
+        }
     }
 }
